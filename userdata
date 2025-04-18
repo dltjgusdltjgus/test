@@ -27,6 +27,7 @@ dnf install -y git
 
 # 8. GitHub에서 애플리케이션 클론
 git clone https://github.com/joozero/amazon-eks-flask.git
+git clone https://github.com/joozero/amazon-eks-flask.git
 
 # 9. 홈 디렉토리로 이동하여 eksctl 클러스터 설정 파일 생성
 cd ~
