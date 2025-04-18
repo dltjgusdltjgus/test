@@ -1,0 +1,24 @@
+#!/bin/bash
+# Install kubectl
+curl -o /usr/local/bin/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.23.13/2022-10-31/bin/linux/amd64/kubectl
+chmod +x /usr/local/bin/kubectl
+
+# Install jq
+yum install -y jq
+
+# Install bash-completion, curl, and eksctl
+yum install -y bash-completion curl
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+mv -v /tmp/eksctl /usr/local/bin
+
+# Update system
+dnf update -y
+
+# Install Docker
+dnf install -y docker
+systemctl enable --now docker
+systemctl enable docker
+systemctl start docker
+
+# Install Git
+dnf install -y git
