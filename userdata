@@ -1,8 +1,24 @@
 #!/bin/bash
 
+# AWS 환경 변수 설정
+export AWS_ACCESS_KEY_ID=$(aws secretsmanager get-secret-value --secret-id AWS_ACCESS_KEY_ID --query SecretString --output text)
+export AWS_SECRET_ACCESS_KEY=$(aws secretsmanager get-secret-value --secret-id AWS_SECRET_ACCESS_KEY --query SecretString --output text)
+# AWS CLI 설정 (AWS_ACCESS_KEY_ID 및 AWS_SECRET_ACCESS_KEY 환경 변수를 자동으로 사용)
+aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+aws configure set region us-west-2  # 필요한 지역으로 설정
+aws configure set output yaml  # 기본 출력 형식을 yaml로 설정
+
+# 추가적인 EC2 인스턴스 구성 명령
+
+
 # 1. kubectl 설치 (EKS 1.23.13 버전용)
 curl -o /usr/local/bin/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.23.13/2022-10-31/bin/linux/amd64/kubectl
 chmod +x /usr/local/bin/kubectl
+
+#
+curl -O https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.7.0/docs/install/iam_policy.json
+
 
 # 2. jq 설치 (JSON 처리 도구)
 yum install -y jq
@@ -25,13 +41,17 @@ systemctl start docker
 # 7. Git 설치
 dnf install -y git
 
+#
+ wget https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/download/v2.7.0/v2_7_0_full.yaml
+
+
 # 8. GitHub에서 애플리케이션 클론
 git clone https://github.com/joozero/amazon-eks-flask.git
 git clone https://github.com/joozero/amazon-eks-flask.git
 
 # 9. 홈 디렉토리로 이동하여 eksctl 클러스터 설정 파일 생성
 cd ~
-cat << EOF > eks-demo-cluster.yaml
+cat << EOF > eks-cluster.yaml
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
@@ -59,3 +79,56 @@ cloudWatch:
   clusterLogging:
     enableTypes: ["*"]               # 모든 로그 유형 활성화
 EOF
+eksctl create cluster -f eks-demo-cluster.yml 
+rolearn=$(aws sts get-caller-identity --query Arn --output text)
+
+# aws-auth ConfigMap 파일을 생성하여 kubectl apply로 적용
+cat << EOF > /tmp/aws-auth.yaml
+apiVersion: v1
+data:
+  mapRoles: |
+    - groups:
+      - system:bootstrappers
+      - system:nodes
+      rolearn: arn:aws:iam::390844776196:role/eksctl-eks-demo-nodegroup-node-gro-NodeInstanceRole-bpZwTKpFFb13
+      username: system:node:{{EC2PrivateDNSName}}
+    - groups:
+      - system:masters
+      rolearn: arn:aws:iam::390844776196:root
+      username: admin
+  mapUsers: |
+    - groups:
+      - system:masters
+      userarn: arn:aws:iam::390844776196:user/dltjgus
+      username: admin
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2025-04-14T02:20:05Z"
+  name: aws-auth
+  namespace: kube-system
+  resourceVersion: "5095"
+  uid: e4c82331-7d53-4e96-b09a-f242e82f2b23
+EOF
+cd ~
+mkdir -p manifests/alb-ingress-controller && cd manifests/alb-ingress-controller
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
