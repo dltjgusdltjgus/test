@@ -1,24 +1,60 @@
 #!/bin/bash
-# Install kubectl
+
+# 1. kubectl 설치 (EKS 1.23.13 버전용)
 curl -o /usr/local/bin/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.23.13/2022-10-31/bin/linux/amd64/kubectl
 chmod +x /usr/local/bin/kubectl
 
-# Install jq
+# 2. jq 설치 (JSON 처리 도구)
 yum install -y jq
 
-# Install bash-completion, curl, and eksctl
-yum install -y bash-completion curl
+# 3. bash-completion 설치 (명령어 자동 완성)
+yum install -y bash-completion
+
+# 4. eksctl 설치 (EKS 클러스터 관리 도구)
 curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
 mv -v /tmp/eksctl /usr/local/bin
 
-# Update system
+# 5. 시스템 패키지 업데이트
 dnf update -y
 
-# Install Docker
+# 6. Docker 설치 및 서비스 활성화
 dnf install -y docker
 systemctl enable --now docker
-systemctl enable docker
 systemctl start docker
 
-# Install Git
+# 7. Git 설치
 dnf install -y git
+
+# 8. GitHub에서 애플리케이션 클론
+git clone https://github.com/joozero/amazon-eks-flask.git
+
+# 9. 홈 디렉토리로 이동하여 eksctl 클러스터 설정 파일 생성
+cd ~
+cat << EOF > eks-demo-cluster.yaml
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: eks-demo                     # 생성할 EKS 클러스터명
+  region: \${AWS_REGION}             # 클러스터를 생성할 리전
+  version: "1.25"                    # 쿠버네티스 버전
+
+vpc:
+  cidr: "192.168.0.0/16"             # 클러스터에서 사용할 VPC의 CIDR
+
+managedNodeGroups:
+  - name: node-group                 # 노드 그룹명
+    instanceType: m5.large           # 워커 노드의 인스턴스 타입
+    desiredCapacity: 3               # 워커 노드 개수
+    volumeSize: 10                   # EBS 볼륨 크기 (GiB)
+    iam:
+      withAddonPolicies:
+        imageBuilder: true           # ECR 접근 권한
+        albIngress: true             # ALB Ingress 컨트롤러 권한
+        cloudWatch: true             # CloudWatch 로그 권한
+        autoScaler: true             # 오토스케일링 권한
+
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["*"]               # 모든 로그 유형 활성화
+EOF
