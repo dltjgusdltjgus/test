@@ -48,7 +48,12 @@ aws ecr get-login-password --region ${AWS_REGION} | \
  docker login --username AWS --password-stdin \
  $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
+cd amazon-eks-flask/
+docker build -t \
+390844776196.dkr.ecr.ap-northeast-2.amazonaws.com/demo-flask-backend:latest .
 
+docker push \
+$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/demo-flask-backend:latest
 
 
 
