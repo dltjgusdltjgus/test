@@ -55,7 +55,11 @@ docker build -t \
 docker push \
 $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/demo-flask-backend:latest
 
-
+eksctl create iamidentitymapping \
+  --cluster eks-demo \
+  --arn ${rolearn} \
+  --group system:masters \
+  --username admin
 
 
 
